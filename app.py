@@ -13,15 +13,21 @@ async def root():
 async def telegram_webhook(request: Request):
     data = await request.json()
 
-    if "message" not in data:
+    message = data.get("message")
+    if not message:
         return {"ok": True}
 
-    chat_id = data["message"]["chat"]["id"]
-    text = data["message"].get("text", "").strip()
+    chat_id = message["chat"]["id"]
+    text = message.get("text")
+
+    if not text:
+        await send_message(chat_id, "❌ Kirim teks ya bro")
+        return {"ok": True}
+
+    text = text.strip()
 
     try:
-        # ✅ parsing pakai regex (AMAN)
-        match = re.match(r"(.+?)\s+(\d+)$", text)
+        match = re.search(r"(.+?)\s+(\d+)\s*$", text)
         if not match:
             raise ValueError("Format tidak cocok")
 
