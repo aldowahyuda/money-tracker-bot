@@ -9,43 +9,58 @@ app = FastAPI()
 async def root():
     return {"status": "ok"}
 
+
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
 
-    # ✅ Telegram standard
+    # ========= 1. VALIDASI UPDATE =========
     if "message" not in data:
         return {"ok": True}
 
     message = data["message"]
+    chat_id = message["chat"]["id"]
+    text = message.get("text")
 
-    if "text" not in message:
+    if not text:
+        await safe_reply(chat_id, "❌ Kirim teks ya bro")
         return {"ok": True}
 
-    chat_id = message["chat"]["id"]
-    text = message["text"].strip()
+    text = text.strip()
 
+    # ========= 2. PARSING INPUT =========
+    match = re.search(r"(.+?)\s+(\d+)\s*$", text)
+    if not match:
+        await safe_reply(
+            chat_id,
+            "❌ Format salah.\nContoh: kopi 25000"
+        )
+        return {"ok": True}
+
+    title = match.group(1)
+    amount = int(match.group(2))
+
+    # ========= 3. INSERT KE NOTION =========
     try:
-        # ✅ regex robust
-        match = re.search(r"(.+?)\s+(\d+)\s*$", text)
-        if not match:
-            raise ValueError("Format tidak cocok")
-
-        title = match.group(1)
-        amount = int(match.group(2))
-
         insert_transaction(title, amount)
-
-        await send_message(
-            chat_id,
-            f"✅ Tercatat!\n📝 {title}\n💸 Rp{amount:,}"
-        )
-
     except Exception as e:
-        await send_message(
+        print("NOTION ERROR:", e)
+        await safe_reply(
             chat_id,
-            f"❌ ERROR DEBUG\ntext={repr(text)}\nerror={str(e)}"
+            "⚠️ Gagal simpan ke Notion. Coba lagi ya."
         )
+        return {"ok": True}
 
+    # ========= 4. BALAS KE TELEGRAM =========
+    await safe_reply(
+        chat_id,
+        f"✅ Tercatat!\n📝 {title}\n💸 Rp{amount:,}"
+    )
 
     return {"ok": True}
+
+async def safe_reply(chat_id: int, text: str):
+    try:
+        await send_message(chat_id, text)
+    except Exception as e:
+        print("TELEGRAM ERROR:", e)
