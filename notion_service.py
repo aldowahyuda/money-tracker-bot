@@ -1,13 +1,13 @@
-from datetime import date
-from notion_client import Client
 import os
+from notion_client import Client
+from datetime import datetime
 
-notion = Client(auth=os.getenv("NOTION_API_KEY"))
-DATABASE_ID = os.getenv("DATABASE_ID")
+notion = Client(auth=os.getenv("NOTION_TOKEN"))
+DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 
 
 def insert_transaction(title: str, amount: int):
-    notion.pages.create(
+    response = notion.pages.create(
         parent={"database_id": DATABASE_ID},
         properties={
             "Transaction": {
@@ -18,14 +18,9 @@ def insert_transaction(title: str, amount: int):
             "Amount": {
                 "number": amount
             },
-            "Type": {
-                "select": {"name": "Expense"}
-            },
-            "Category": {
-                "select": {"name": "Food & Dining"}
-            },
             "Date": {
-                "date": {"start": date.today().isoformat()}
+                "date": {"start": datetime.now().isoformat()}
             }
         }
     )
+    return response
