@@ -44,7 +44,8 @@ async def telegram_webhook(request: Request):
     except Exception as e:
         await send_message(
             chat_id,
-            "❌ Format salah.\nContoh: kopi 25000"
+            f"❌ ERROR DEBUG\ntext={repr(text)}\nerror={str(e)}"
         )
+
 
     return {"ok": True}
