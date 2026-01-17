@@ -96,3 +96,43 @@ async def safe_reply(chat_id: int, text: str):
         await send_message(chat_id, text)
     except Exception as e:
         print("TELEGRAM ERROR:", e)
+
+async def handle_month(chat_id: int):
+    rows = get_month_transactions()
+
+    income = []
+    expense = []
+    total_income = 0
+    total_expense = 0
+
+    for r in rows:
+        props = r["properties"]
+        title = props["Transaction"]["title"][0]["text"]["content"]
+        amount = props["Amount"]["number"]
+        tx_type = props["Type"]["select"]["name"].lower()
+
+        if tx_type == "income":
+            income.append((title, amount))
+            total_income += amount
+        else:
+            expense.append((title, amount))
+            total_expense += amount
+
+    msg = "📊 Ringkasan Bulan Ini\n\n"
+
+    if income:
+        msg += "Income:\n"
+        for t, a in income:
+            msg += f"+ {t} : Rp{a:,}\n"
+
+    if expense:
+        msg += "\nExpense:\n"
+        for t, a in expense:
+            msg += f"- {t} : Rp{a:,}\n"
+
+    msg += f"\n💰 Net: Rp{total_income - total_expense:,}"
+
+    send_message(chat_id, msg)
+
+if text == "/month":
+    return await handle_month(chat_id)
