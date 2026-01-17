@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from services.telegram_service import send_message
-from services.notion_service import insert_transaction, get_today_transactions
+from services.notion_service import insert_transaction, get_today_transactions, get_month_transactions
 from services.parser_service import parse_transaction
 
 app = FastAPI()
