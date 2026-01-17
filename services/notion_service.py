@@ -28,27 +28,28 @@ def insert_transaction(title: str, amount: int, tx_type: str):
 
 def get_today_transactions():
     today = datetime.now().date().isoformat()
-
-    response = notion.search(
-        filter={
-            "property": "object",
-            "value": "page"
-        }
-    )
-
     results = []
+    cursor = None
 
-    for page in response["results"]:
-        props = page["properties"]
+    while True:
+        response = notion.search(
+            filter={"property": "object", "value": "page"},
+            start_cursor=cursor
+        )
 
-        if "Date" not in props:
-            continue
+        for page in response["results"]:
+            props = page["properties"]
+            date_prop = props.get("Date", {}).get("date")
 
-        date_prop = props["Date"].get("date")
-        if not date_prop:
-            continue
+            if not date_prop:
+                continue
 
-        if date_prop["start"] == today:
-            results.append(page)
+            if date_prop["start"].startswith(today):
+                results.append(page)
+
+        if not response.get("has_more"):
+            break
+
+        cursor = response.get("next_cursor")
 
     return results
