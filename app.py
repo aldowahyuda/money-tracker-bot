@@ -29,6 +29,9 @@ async def telegram_webhook(request: Request):
     # ===== COMMAND =====
     if text == "/today":
         return await handle_today(chat_id)
+    
+    if text == "/month":
+        return await handle_month(chat_id)
 
     # ===== TRANSACTION =====
     try:
@@ -133,6 +136,3 @@ async def handle_month(chat_id: int):
     msg += f"\n💰 Net: Rp{total_income - total_expense:,}"
 
     send_message(chat_id, msg)
-
-if text == "/month":
-    return await handle_month(chat_id)
