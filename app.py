@@ -103,6 +103,10 @@ async def safe_reply(chat_id: int, text: str):
 async def handle_month(chat_id: int):
     rows = get_month_transactions()
 
+    if not rows:
+        await safe_reply(chat_id, "📭 Belum ada transaksi bulan ini")
+        return {"ok": True}
+
     income = []
     expense = []
     total_income = 0
@@ -124,15 +128,16 @@ async def handle_month(chat_id: int):
     msg = "📊 Ringkasan Bulan Ini\n\n"
 
     if income:
-        msg += "Income:\n"
+        msg += "💰 Income:\n"
         for t, a in income:
-            msg += f"+ {t} : Rp{a:,}\n"
+            msg += f"+ {t}: Rp{a:,}\n"
 
     if expense:
-        msg += "\nExpense:\n"
+        msg += "\n💸 Expense:\n"
         for t, a in expense:
-            msg += f"- {t} : Rp{a:,}\n"
+            msg += f"- {t}: Rp{a:,}\n"
 
-    msg += f"\n💰 Net: Rp{total_income - total_expense:,}"
+    msg += f"\n💡 Net: Rp{total_income - total_expense:,}"
 
-    send_message(chat_id, msg)
+    await safe_reply(chat_id, msg)
+    return {"ok": True}
