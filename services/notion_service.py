@@ -82,3 +82,17 @@ def get_month_transactions():
         cursor = response.get("next_cursor")
 
     return results
+
+def get_year_transactions():
+    now = datetime.now()
+    start = now.replace(month=1, day=1, hour=0, minute=0, second=0)
+
+    return notion.databases.query(
+        database_id=NOTION_DB_ID,
+        filter={
+            "property": "Date",
+            "date": {
+                "on_or_after": start.isoformat()
+            }
+        }
+    )["results"]

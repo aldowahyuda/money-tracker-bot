@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from services.telegram_service import send_message
-from services.notion_service import insert_transaction, get_today_transactions, get_month_transactions
+from services.notion_service import insert_transaction, get_today_transactions, get_month_transactions, get_year_transactions
 from services.parser_service import parse_transaction
 
 app = FastAPI()
@@ -32,6 +32,9 @@ async def telegram_webhook(request: Request):
     
     if text == "/month":
         return await handle_month(chat_id)
+    
+    if text == "/year":
+        return await handle_year(chat_id)
 
     # ===== TRANSACTION =====
     try:
@@ -136,6 +139,49 @@ async def handle_month(chat_id: int):
         msg += "\n💸 Expense:\n"
         for t, a in expense:
             msg += f"- {t}: Rp{a:,}\n"
+
+    msg += f"\n💡 Net: Rp{total_income - total_expense:,}"
+
+    await safe_reply(chat_id, msg)
+    return {"ok": True}
+
+
+async def handle_year(chat_id: int):
+    rows = get_year_transactions()
+
+    if not rows:
+        await safe_reply(chat_id, "📭 Belum ada transaksi tahun ini")
+        return {"ok": True}
+
+    income = {}
+    expense = {}
+    total_income = 0
+    total_expense = 0
+
+    for r in rows:
+        props = r["properties"]
+        title = props["Transaction"]["title"][0]["text"]["content"]
+        amount = props["Amount"]["number"]
+        tx_type = props["Type"]["select"]["name"].lower()
+
+        if tx_type == "income":
+            income[title] = income.get(title, 0) + amount
+            total_income += amount
+        else:
+            expense[title] = expense.get(title, 0) + amount
+            total_expense += amount
+
+    msg = "📊 Ringkasan Tahun Ini\n\n"
+
+    if income:
+        msg += "💰 Income:\n"
+        for k, v in income.items():
+            msg += f"+ {k}: Rp{v:,}\n"
+
+    if expense:
+        msg += "\n💸 Expense:\n"
+        for k, v in expense.items():
+            msg += f"- {k}: Rp{v:,}\n"
 
     msg += f"\n💡 Net: Rp{total_income - total_expense:,}"
 
