@@ -69,6 +69,12 @@ async def telegram_webhook(request: Request):
 
     return {"ok": True}
 
+async def safe_reply(chat_id: int, text: str):
+    try:
+        await send_message(chat_id, text)
+    except Exception as e:
+        print("TELEGRAM ERROR:", e)
+
 
 async def handle_today(chat_id: int):
     rows = get_today_transactions()
@@ -77,31 +83,41 @@ async def handle_today(chat_id: int):
         await safe_reply(chat_id, "📭 Belum ada transaksi hari ini")
         return {"ok": True}
 
-    total = 0
-    lines = []
+    income = []
+    expense = []
+    total_income = 0
+    total_expense = 0
 
-    for row in rows:
-        title = row["properties"]["Transaction"]["title"][0]["text"]["content"]
-        amount = row["properties"]["Amount"]["number"]
-        tx_type = row["properties"]["Type"]["select"]["name"]
+    for r in rows:
+        props = r["properties"]
+        title = props["Transaction"]["title"][0]["text"]["content"]
+        amount = props["Amount"]["number"]
+        tx_type = props["Type"]["select"]["name"].lower()
 
-        sign = "+" if tx_type == "Income" else "-"
-        total += amount if sign == "+" else -amount
+        if tx_type == "income":
+            income.append((title, amount))
+            total_income += amount
+        else:
+            expense.append((title, amount))
+            total_expense += amount
 
-        lines.append(f"{sign} {title}: Rp{amount:,}")
+    msg = "📅 Ringkasan Hari Ini\n\n"
 
-    msg = "📅 Transaksi Hari Ini\n\n" + "\n".join(lines)
-    msg += f"\n\n💡 Total: Rp{total:,}"
+    if income:
+        msg += "💰 Income:\n"
+        for t, a in income:
+            msg += f"+ {t} : Rp{a:,}\n"
+
+    if expense:
+        msg += "\n💸 Expense:\n"
+        for t, a in expense:
+            msg += f"- {t} : Rp{a:,}\n"
+
+    msg += f"\n💡 Net: Rp{total_income - total_expense:,}"
 
     await safe_reply(chat_id, msg)
     return {"ok": True}
 
-
-async def safe_reply(chat_id: int, text: str):
-    try:
-        await send_message(chat_id, text)
-    except Exception as e:
-        print("TELEGRAM ERROR:", e)
 
 async def handle_month(chat_id: int):
     rows = get_month_transactions()
@@ -187,3 +203,4 @@ async def handle_year(chat_id: int):
 
     await safe_reply(chat_id, msg)
     return {"ok": True}
+
