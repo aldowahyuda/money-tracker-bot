@@ -9,7 +9,7 @@ DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 # =========================
 # INSERT TRANSACTION
 # =========================
-def insert_transaction(title: str, amount: int, tx_type: str):
+def insert_transaction(title: str, amount: int, tx_type: str, category: str):
     return notion.pages.create(
         parent={"database_id": DATABASE_ID},
         properties={
