@@ -49,7 +49,7 @@ async def telegram_webhook(request: Request):
         return {"ok": True}
     
     category = detect_category(tx["title"])
-    print("CATEGORY:", category)
+    #print("CATEGORY:", category)
 
     try:
         insert_transaction(
