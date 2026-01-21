@@ -2,6 +2,8 @@ from fastapi import FastAPI, Request
 from services.telegram_service import send_message
 from services.notion_service import insert_transaction, get_today_transactions, get_month_transactions, get_year_transactions
 from services.parser_service import parse_transaction
+from services.category_service import detect_category
+
 
 app = FastAPI()
 
@@ -45,12 +47,16 @@ async def telegram_webhook(request: Request):
             "❌ Format salah.\nContoh:\n- kopi 25k\n- gaji 5jt"
         )
         return {"ok": True}
+    
+    category = detect_category(tx["title"])
+    print("CATEGORY:", category)
 
     try:
         insert_transaction(
             tx["title"],
             tx["amount"],
-            tx["type"]
+            tx["type"],
+            category
         )
     except Exception as e:
         print("NOTION ERROR:", e)
@@ -64,7 +70,8 @@ async def telegram_webhook(request: Request):
         f"✅ Tercatat!\n"
         f"📝 {tx['title']}\n"
         f"{emoji} Rp{tx['amount']:,}\n"
-        f"📌 {tx['type'].capitalize()}"
+        f"📌 {tx['type'].capitalize()}\n"
+        f"🏷️ {category}"
     )
 
     return {"ok": True}

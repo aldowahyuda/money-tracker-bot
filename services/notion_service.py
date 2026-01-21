@@ -22,6 +22,9 @@ def insert_transaction(title: str, amount: int, tx_type: str):
             "Type": {
                 "select": {"name": tx_type.capitalize()}
             },
+            "Category": {
+                "select": {"name": category}
+            },
             "Date": {
                 "date": {"start": datetime.now().isoformat()}
             }
